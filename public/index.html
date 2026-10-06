@@ -1,0 +1,23 @@
+<!doctype html><html lang="pt-br"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Roteador de IAs</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;background:#f6f7f9;color:#111}
+#log{min-height:50vh}.m{margin:10px 0;padding:10px 12px;border-radius:10px;white-space:pre-wrap}
+.u{background:#dbeafe;margin-left:15%}.a{background:#fff;margin-right:15%}.t{font-size:12px;color:#666;margin-top:6px}
+form{display:flex;gap:8px;position:sticky;bottom:0;background:#f6f7f9;padding-top:8px}
+input{flex:1;padding:10px;border:1px solid #ccc;border-radius:8px}button,select{padding:10px;border-radius:8px;border:1px solid #ccc}
+</style></head><body>
+<h2>Roteador de IAs</h2>
+<select id="model"><option value="">Automático (o roteador escolhe)</option></select>
+<div id="log"></div>
+<form id="f"><input id="q" placeholder="Digite sua pergunta..." autocomplete="off" autofocus><button>Enviar</button></form>
+<script>
+const msgs=[],log=document.getElementById('log'),sel=document.getElementById('model');
+fetch('/api/models').then(r=>r.json()).then(l=>l.forEach(m=>sel.add(new Option(m.label,m.id))));
+const add=(c,t,x)=>{const d=document.createElement('div');d.className='m '+c;d.textContent=t;if(x){const s=document.createElement('div');s.className='t';s.textContent=x;d.append(s)}log.append(d);d.scrollIntoView()};
+f.onsubmit=async e=>{e.preventDefault();const t=q.value.trim();if(!t)return;q.value='';msgs.push({role:'user',content:t});add('u',t);
+ try{const r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:msgs,model:sel.value})});
+ const d=await r.json();if(!r.ok)throw new Error(d.error);msgs.push({role:'assistant',content:d.reply});
+ add('a',d.reply,`${d.label} · tipo: ${d.category} · ${d.ms}ms`+(d.tried.length?` · fallback após falha de ${d.tried.map(x=>x.model)}`:''))}
+ catch(err){add('a','Erro: '+err.message);msgs.pop()}};
+</script></body></html>
