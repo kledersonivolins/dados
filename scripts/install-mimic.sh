@@ -9,7 +9,7 @@ if ! command -v uv >/dev/null 2>&1; then
   export PATH="$HOME/.local/bin:$PATH"
 fi
 
-uv tool install mimic-client --reinstall
+uv tool install git+https://github.com/littledivy/mimic --reinstall
 
 echo
 echo "instalado. próximos passos:"
