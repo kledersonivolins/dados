@@ -1,0 +1,41 @@
+name: Android APK
+
+on:
+  push:
+    paths: ["android-vpn/**", ".github/workflows/android.yml"]
+  pull_request:
+    paths: ["android-vpn/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # O runner já traz o Android SDK; só garantimos as licenças aceitas.
+      - name: Aceitar licenças do SDK
+        run: yes | "$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | head -1)" --licenses > /dev/null || true
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      # URL e token da API (opcionais): Settings > Secrets and variables > Actions.
+      - name: Compilar APK de debug
+        working-directory: android-vpn
+        env:
+          ORG_GRADLE_PROJECT_meutunelApiUrl: ${{ secrets.MEUTUNEL_API_URL }}
+          ORG_GRADLE_PROJECT_meutunelApiToken: ${{ secrets.MEUTUNEL_API_TOKEN }}
+        run: gradle --no-daemon :app:assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meutunel-debug-apk
+          path: android-vpn/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

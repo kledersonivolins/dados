@@ -1,0 +1,24 @@
+[Unit]
+Description=API do MeuTúnel
+After=network-online.target wg-quick@wg0.service
+Wants=network-online.target
+# Se o wg0 reiniciar, a API reinicia junto e reaplica os peers.
+PartOf=wg-quick@wg0.service
+
+[Service]
+EnvironmentFile=/etc/meutunel-api.env
+ExecStart=/usr/bin/python3 /opt/meutunel-api/server.py
+WorkingDirectory=/opt/meutunel-api
+DynamicUser=yes
+StateDirectory=meutunel-api
+# CAP_NET_ADMIN basta para `wg set`; o resto fica fechado.
+AmbientCapabilities=CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
