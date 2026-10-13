@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">MeuTúnel</string>
+    <string name="connect">Conectar</string>
+    <string name="disconnect">Desconectar</string>
+    <string name="status_down">Desconectado</string>
+    <string name="status_up">Conectado</string>
+    <string name="status_working">Aguarde…</string>
+    <string name="excluded_apps">Apps fora do VPN</string>
+    <string name="my_public_key">Chave pública deste aparelho</string>
+    <string name="copy">Copiar</string>
+    <string name="copied">Chave copiada</string>
+    <string name="ping_testing">Testando…</string>
+    <string name="ping_ms">%1$d ms</string>
+    <string name="ping_fail">sem resposta</string>
+    <string name="no_servers">Nenhum servidor em assets/servers.json</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancelar</string>
+</resources>

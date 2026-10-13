@@ -1,0 +1,12 @@
+[
+  {
+    "id": "exemplo",
+    "name": "Meu servidor",
+    "country": "BR",
+    "endpoint": "203.0.113.10:51820",
+    "publicKey": "COLE_AQUI_A_CHAVE_PUBLICA_DO_SERVIDOR_EM_BASE64=",
+    "address": "10.8.0.2/32",
+    "dns": "1.1.1.1",
+    "pingPort": 22
+  }
+]
