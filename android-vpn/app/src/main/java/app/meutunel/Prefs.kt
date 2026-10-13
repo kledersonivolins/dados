@@ -26,7 +26,13 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_LAST_SERVER, null)
         set(value) = sp.edit().putString(KEY_LAST_SERVER, value).apply()
 
+    /** Última lista de servidores recebida da API (JSON), para abrir sem rede. */
+    var cachedServers: String?
+        get() = sp.getString(KEY_SERVERS, null)
+        set(value) = sp.edit().putString(KEY_SERVERS, value).apply()
+
     private companion object {
+        const val KEY_SERVERS = "cached_servers"
         const val KEY_PRIVATE = "private_key"
         const val KEY_EXCLUDED = "excluded_apps"
         const val KEY_LAST_SERVER = "last_server"

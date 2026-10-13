@@ -72,7 +72,7 @@ class VpnController(context: Context) {
     private fun buildConfig(server: Server): Config {
         val iface = Interface.Builder()
             .setKeyPair(prefs.keyPair)
-            .parseAddresses(server.address)
+            .parseAddresses(requireNotNull(server.address) { "servidor sem endereço" })
             .parseDnsServers(server.dns)
             .excludeApplications(prefs.excludedApps)
             .build()

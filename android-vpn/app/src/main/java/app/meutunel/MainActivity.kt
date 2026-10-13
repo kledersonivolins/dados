@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
     private val io = Executors.newSingleThreadExecutor()
     private val ui = Handler(Looper.getMainLooper())
 
-    private lateinit var servers: List<Server>
+    private var servers: List<Server> = emptyList()
     private lateinit var spinner: Spinner
     private lateinit var connectButton: Button
     private lateinit var statusText: TextView
@@ -52,27 +52,18 @@ class MainActivity : AppCompatActivity() {
         statsText = findViewById(R.id.statsText)
         pingText = findViewById(R.id.pingText)
 
-        servers = try {
-            Server.loadAll(this)
-        } catch (e: Exception) {
-            emptyList()
-        }
-        if (servers.isEmpty()) {
-            Toast.makeText(this, R.string.no_servers, Toast.LENGTH_LONG).show()
-            connectButton.isEnabled = false
-        } else {
-            spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, servers)
-            val last = servers.indexOfFirst { it.id == prefs.lastServerId }
-            if (last >= 0) spinner.setSelection(last)
-            spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                    prefs.lastServerId = servers[pos].id
-                    measurePing(servers[pos])
-                }
-
-                override fun onNothingSelected(p: AdapterView<*>?) {}
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                val server = servers.getOrNull(pos) ?: return
+                prefs.lastServerId = server.id
+                measurePing(server)
             }
+
+            override fun onNothingSelected(p: AdapterView<*>?) {}
         }
+        // Mostra já o último cache (ou os servidores embutidos) e atualiza pela API em seguida.
+        setServers(loadLocalServers())
+        refreshServers()
 
         findViewById<TextView>(R.id.publicKeyText).text = vpn.publicKey
         findViewById<Button>(R.id.copyKeyButton).setOnClickListener {
@@ -135,7 +126,45 @@ class MainActivity : AppCompatActivity() {
         val server = servers.getOrNull(spinner.selectedItemPosition) ?: return
         working = true
         render()
-        vpn.connect(server, ::onVpnError)
+        io.execute {
+            try {
+                // O cadastro é idempotente: repetir devolve o mesmo IP e reaplica o peer.
+                val address = server.address
+                    ?: ApiClient.registerDevice(server.id, vpn.publicKey)
+                ui.post { vpn.connect(server.copy(address = address), ::onVpnError) }
+            } catch (t: Throwable) {
+                ui.post { onVpnError(t) }
+            }
+        }
+    }
+
+    private fun loadLocalServers(): List<Server> {
+        prefs.cachedServers?.let { cached ->
+            runCatching { Server.parse(cached) }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
+        }
+        return runCatching { Server.loadAssets(this) }.getOrDefault(emptyList())
+    }
+
+    private fun refreshServers() {
+        if (!ApiClient.enabled) return
+        io.execute {
+            val raw = runCatching { ApiClient.fetchServers() }.getOrNull() ?: return@execute
+            val list = runCatching { Server.parse(raw) }.getOrNull()?.takeIf { it.isNotEmpty() } ?: return@execute
+            prefs.cachedServers = raw
+            ui.post { if (!isFinishing) setServers(list) }
+        }
+    }
+
+    private fun setServers(list: List<Server>) {
+        // Mantém a seleção atual (ou a última usada) ao trocar a lista.
+        val keepId = servers.getOrNull(spinner.selectedItemPosition)?.id ?: prefs.lastServerId
+        servers = list
+        if (list.isEmpty()) {
+            Toast.makeText(this, R.string.no_servers, Toast.LENGTH_LONG).show()
+        }
+        spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, list)
+        list.indexOfFirst { it.id == keepId }.takeIf { it >= 0 }?.let { spinner.setSelection(it) }
+        render()
     }
 
     private fun onVpnError(t: Throwable) {

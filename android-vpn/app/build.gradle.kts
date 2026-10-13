@@ -3,6 +3,12 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Defina em ~/.gradle/gradle.properties (não commitado):
+//   meutunelApiUrl=https://api.seudominio.com
+//   meutunelApiToken=...
+val apiUrl = (project.findProperty("meutunelApiUrl") as String?).orEmpty()
+val apiToken = (project.findProperty("meutunelApiToken") as String?).orEmpty()
+
 android {
     namespace = "app.meutunel"
     compileSdk = 34
@@ -12,7 +18,12 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "0.2.0"
+        buildConfigField("String", "API_URL", "\"$apiUrl\"")
+        buildConfigField("String", "API_TOKEN", "\"$apiToken\"")
+    }
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
